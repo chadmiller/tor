@@ -1,12 +1,12 @@
 /* Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2017, The Tor Project, Inc. */
+ * Copyright (c) 2007-2019, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 #include "orconfig.h"
-#include "or.h"
-#include "compat_threads.h"
-#include "test.h"
+#include "core/or/or.h"
+#include "lib/thread/threads.h"
+#include "test/test.h"
 
 /** mutex for thread test to stop the threads hitting data at the same time. */
 static tor_mutex_t *thread_test_mutex_ = NULL;

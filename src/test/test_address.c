@@ -1,4 +1,4 @@
-/* Copyright (c) 2014-2017, The Tor Project, Inc. */
+/* Copyright (c) 2014-2019, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 #define ADDRESS_PRIVATE
@@ -23,10 +23,11 @@
 #include <net/if.h>
 #endif /* defined(HAVE_IFCONF_TO_SMARTLIST) */
 
-#include "or.h"
-#include "address.h"
-#include "test.h"
-#include "log_test_helpers.h"
+#include "core/or/or.h"
+#include "feature/nodelist/nodelist.h"
+#include "lib/net/address.h"
+#include "test/test.h"
+#include "test/log_test_helpers.h"
 
 /** Return 1 iff <b>sockaddr1</b> and <b>sockaddr2</b> represent
  * the same IP address and port combination. Otherwise, return 0.
@@ -743,7 +744,7 @@ test_address_get_if_addrs_list_internal(void *arg)
 
   (void)arg;
 
-  results = get_interface_address_list(LOG_ERR, 1);
+  results = get_interface_address_list(LOG_WARN, 1);
 
   tt_ptr_op(results, OP_NE, NULL);
   /* When the network is down, a system might not have any non-local
@@ -774,7 +775,7 @@ test_address_get_if_addrs_list_no_internal(void *arg)
 
   (void)arg;
 
-  results = get_interface_address_list(LOG_ERR, 0);
+  results = get_interface_address_list(LOG_WARN, 0);
 
   tt_ptr_op(results, OP_NE, NULL);
   /* Work even on systems with only internal IPv4 addresses */
@@ -985,7 +986,7 @@ test_address_get_if_addrs(void *arg)
 
   (void)arg;
 
-  rv = get_interface_address(LOG_ERR, &addr_h);
+  rv = get_interface_address(LOG_WARN, &addr_h);
 
   /* When the network is down, a system might not have any non-local
    * non-multicast IPv4 addresses, not even internal ones.
@@ -1012,7 +1013,7 @@ test_address_get_if_addrs6(void *arg)
 
   (void)arg;
 
-  rv = get_interface_address6(LOG_ERR, AF_INET6, &tor_addr);
+  rv = get_interface_address6(LOG_WARN, AF_INET6, &tor_addr);
 
   /* Work even on systems without IPv6 interfaces */
   if (rv == 0) {
@@ -1139,6 +1140,36 @@ test_address_tor_addr_eq_ipv4h(void *ignored)
   tor_free(a);
 }
 
+static void
+test_address_tor_addr_in_same_network_family(void *ignored)
+{
+  (void)ignored;
+  tor_addr_t a, b;
+
+  tor_addr_parse(&a, "8.8.8.8");
+  tor_addr_parse(&b, "8.8.4.4");
+  tt_int_op(addrs_in_same_network_family(&a, &b), OP_EQ, 1);
+
+  tor_addr_parse(&a, "8.8.8.8");
+  tor_addr_parse(&b, "1.1.1.1");
+  tt_int_op(addrs_in_same_network_family(&a, &b), OP_EQ, 0);
+
+  tor_addr_parse(&a, "8.8.8.8");
+  tor_addr_parse(&b, "2001:4860:4860::8844");
+  tt_int_op(addrs_in_same_network_family(&a, &b), OP_EQ, 0);
+
+  tor_addr_parse(&a, "2001:4860:4860::8888");
+  tor_addr_parse(&b, "2001:4860:4860::8844");
+  tt_int_op(addrs_in_same_network_family(&a, &b), OP_EQ, 1);
+
+  tor_addr_parse(&a, "2001:4860:4860::8888");
+  tor_addr_parse(&b, "2001:470:20::2");
+  tt_int_op(addrs_in_same_network_family(&a, &b), OP_EQ, 0);
+
+ done:
+  return;
+}
+
 #define ADDRESS_TEST(name, flags) \
   { #name, test_address_ ## name, flags, NULL, NULL }
 
@@ -1170,6 +1201,6 @@ struct testcase_t address_tests[] = {
   ADDRESS_TEST(tor_addr_to_ipv4n, 0),
   ADDRESS_TEST(tor_addr_to_mapped_ipv4h, 0),
   ADDRESS_TEST(tor_addr_eq_ipv4h, 0),
+  ADDRESS_TEST(tor_addr_in_same_network_family, 0),
   END_OF_TESTCASES
 };
-

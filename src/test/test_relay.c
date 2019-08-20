@@ -1,27 +1,30 @@
-/* Copyright (c) 2014-2017, The Tor Project, Inc. */
+/* Copyright (c) 2014-2019, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
-#include "or.h"
 #define CIRCUITBUILD_PRIVATE
-#include "circuitbuild.h"
-#include "circuitlist.h"
-#include "rephist.h"
-#include "channeltls.h"
 #define RELAY_PRIVATE
-#include "relay.h"
+#define REPHIST_PRIVATE
+#include "core/or/or.h"
+#include "core/or/circuitbuild.h"
+#include "core/or/circuitlist.h"
+#include "core/or/channeltls.h"
+#include "feature/stats/rephist.h"
+#include "core/or/relay.h"
+#include "feature/stats/rephist.h"
+#include "lib/container/order.h"
 /* For init/free stuff */
-#include "scheduler.h"
+#include "core/or/scheduler.h"
+
+#include "core/or/cell_st.h"
+#include "core/or/or_circuit_st.h"
 
 /* Test suite stuff */
-#include "test.h"
-#include "fakechans.h"
+#include "test/test.h"
+#include "test/fakechans.h"
 
 static or_circuit_t * new_fake_orcirc(channel_t *nchan, channel_t *pchan);
 
 static void test_relay_append_cell_to_circuit_queue(void *arg);
-uint64_t find_largest_max(bw_array_t *b);
-void commit_max(bw_array_t *b);
-void advance_obs(bw_array_t *b);
 
 static or_circuit_t *
 new_fake_orcirc(channel_t *nchan, channel_t *pchan)

@@ -1,4 +1,4 @@
-/* Copyright (c) 2017, The Tor Project, Inc. */
+/* Copyright (c) 2017-2019, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -9,18 +9,18 @@
 #define HS_INTROPOINT_PRIVATE
 #define HS_SERVICE_PRIVATE
 
-#include "test.h"
-#include "test_helpers.h"
-#include "log_test_helpers.h"
+#include "test/test.h"
+#include "test/test_helpers.h"
+#include "test/log_test_helpers.h"
 
-#include "crypto_ed25519.h"
-#include "crypto_rand.h"
-#include "hs_cell.h"
-#include "hs_intropoint.h"
-#include "hs_service.h"
+#include "lib/crypt_ops/crypto_ed25519.h"
+#include "lib/crypt_ops/crypto_rand.h"
+#include "feature/hs/hs_cell.h"
+#include "feature/hs/hs_intropoint.h"
+#include "feature/hs/hs_service.h"
 
 /* Trunnel. */
-#include "hs/cell_establish_intro.h"
+#include "trunnel/hs/cell_establish_intro.h"
 
 /** We simulate the creation of an outgoing ESTABLISH_INTRO cell, and then we
  *  parse it from the receiver side. */
@@ -50,7 +50,7 @@ test_gen_establish_intro_cell(void *arg)
   /* Check the contents of the cell */
   {
     /* First byte is the auth key type: make sure its correct */
-    tt_int_op(buf[0], OP_EQ, HS_INTRO_AUTH_KEY_TYPE_ED25519);
+    tt_int_op(buf[0], OP_EQ, TRUNNEL_HS_INTRO_AUTH_KEY_TYPE_ED25519);
     /* Next two bytes is auth key len */
     tt_int_op(ntohs(get_uint16(buf+1)), OP_EQ, ED25519_PUBKEY_LEN);
     /* Skip to the number of extensions: no extensions */
