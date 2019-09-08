@@ -2463,6 +2463,69 @@ test_options_validate__circuits(void *ignored)
 }
 
 static void
+test_options_validate__port_forwarding(void *ignored)
+{
+  (void)ignored;
+  int ret;
+  char *msg;
+  options_test_data_t *tdata = NULL;
+
+  free_options_test_data(tdata);
+  tdata = get_options_test_data(TEST_OPTIONS_DEFAULT_VALUES
+                                "PortForwarding 1\nSandbox 1\n");
+  ret = options_validate(tdata->old_opt, tdata->opt, tdata->def_opt, 0, &msg);
+  tt_int_op(ret, OP_EQ, -1);
+  tt_str_op(msg, OP_EQ, "PortForwarding is not compatible with Sandbox;"
+            " at most one can be set");
+  tor_free(msg);
+
+  free_options_test_data(tdata);
+  tdata = get_options_test_data(TEST_OPTIONS_DEFAULT_VALUES
+                                "PortForwarding 1\nSandbox 0\n");
+  ret = options_validate(tdata->old_opt, tdata->opt, tdata->def_opt, 0, &msg);
+  tt_int_op(ret, OP_EQ, 0);
+  tt_assert(!msg);
+  tor_free(msg);
+
+ done:
+  free_options_test_data(tdata);
+  policies_free_all();
+  tor_free(msg);
+}
+
+static void
+test_options_validate__tor2web(void *ignored)
+{
+  return;
+
+  (void)ignored;
+  int ret;
+  char *msg;
+  options_test_data_t *tdata = NULL;
+
+  free_options_test_data(tdata);
+  tdata = get_options_test_data(TEST_OPTIONS_DEFAULT_VALUES
+                                "Tor2webRendezvousPoints 1\n");
+  ret = options_validate(tdata->old_opt, tdata->opt, tdata->def_opt, 0, &msg);
+  tt_int_op(ret, OP_EQ, -1);
+  tt_str_op(msg, OP_EQ,
+            "Tor2webRendezvousPoints cannot be set without Tor2webMode.");
+  tor_free(msg);
+
+  free_options_test_data(tdata);
+  tdata = get_options_test_data(TEST_OPTIONS_DEFAULT_VALUES
+                                "Tor2webRendezvousPoints 1\nTor2webMode 1\n");
+  ret = options_validate(tdata->old_opt, tdata->opt, tdata->def_opt, 0, &msg);
+  tt_int_op(ret, OP_EQ, 0);
+  tor_free(msg);
+
+ done:
+  policies_free_all();
+  free_options_test_data(tdata);
+  tor_free(msg);
+}
+
+static void
 test_options_validate__rend(void *ignored)
 {
   (void)ignored;
@@ -4214,6 +4277,8 @@ struct testcase_t options_tests[] = {
   LOCAL_VALIDATE_TEST(path_bias),
   LOCAL_VALIDATE_TEST(bandwidth),
   LOCAL_VALIDATE_TEST(circuits),
+  LOCAL_VALIDATE_TEST(port_forwarding),
+  LOCAL_VALIDATE_TEST(tor2web),
   LOCAL_VALIDATE_TEST(rend),
   LOCAL_VALIDATE_TEST(single_onion),
   LOCAL_VALIDATE_TEST(accounting),

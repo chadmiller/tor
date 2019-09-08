@@ -95,6 +95,7 @@
 #include "feature/stats/geoip_stats.h"
 #include "feature/stats/predict_ports.h"
 #include "feature/stats/rephist.h"
+#include "feature/portforwarding/util.h"
 #include "lib/container/buffers.h"
 #include "lib/crypt_ops/crypto_rand.h"
 #include "lib/err/backtrace.h"
@@ -1377,6 +1378,7 @@ CALLBACK(save_stability);
 CALLBACK(save_state);
 CALLBACK(write_bridge_ns);
 CALLBACK(write_stats_file);
+CALLBACK(check_fw_helper_app);
 
 #undef CALLBACK
 
@@ -1445,6 +1447,9 @@ STATIC periodic_event_item_t periodic_events[] = {
 
   /* Directory server only. */
   CALLBACK(clean_consdiffmgr, PERIODIC_EVENT_ROLE_DIRSERVER, 0),
+
+  /* Port-forwarding helper for relays or bridges */
+  CALLBACK(check_fw_helper_app, PERIODIC_EVENT_ROLE_RELAY|PERIODIC_EVENT_ROLE_BRIDGE, 0),
 
   END_OF_PERIODIC_EVENTS
 };
@@ -2440,6 +2445,33 @@ write_bridge_ns_callback(time_t now, const or_options_t *options)
      return BRIDGE_STATUSFILE_INTERVAL;
   }
   return PERIODIC_EVENT_NO_UPDATE;
+}
+
+/**
+ * Periodic callback: poke the tor-fw-helper app if we're using one.
+ */
+static int
+check_fw_helper_app_callback(time_t now, const or_options_t *options)
+{
+  if (net_is_disabled() ||
+      ! server_mode(options) ||
+      ! options->PortForwarding ||
+      options->NoExec) {
+    return PERIODIC_EVENT_NO_UPDATE;
+  }
+  /* 11. check the port forwarding app */
+
+#define PORT_FORWARDING_CHECK_INTERVAL 5
+  smartlist_t *ports_to_forward = get_list_of_ports_to_forward();
+  if (ports_to_forward) {
+    tor_check_port_forwarding(options->PortForwardingHelper,
+                              ports_to_forward,
+                              now);
+
+    SMARTLIST_FOREACH(ports_to_forward, char *, cp, tor_free(cp));
+    smartlist_free(ports_to_forward);
+  }
+  return PORT_FORWARDING_CHECK_INTERVAL;
 }
 
 static int heartbeat_callback_first_time = 1;
