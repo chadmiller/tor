@@ -120,7 +120,7 @@ MOCK_DECL(void, tor_process_handle_destroy,(process_handle_t *process_handle,
 /* Prototypes for private functions only used by util.c (and unit tests) */
 
 #ifndef _WIN32
-STATIC int format_helper_exit_status(unsigned char child_state,
+int format_helper_exit_status(unsigned char child_state,
                               int saved_errno, char *hex_errno);
 
 /* Space for hex values of child state, a slash, saved_errno (with
